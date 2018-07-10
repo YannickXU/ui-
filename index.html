@@ -1,0 +1,461 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style>
+	.main{
+		margin-left: 100px;
+		margin-top:500px;
+		height:150px;
+		/*width: 350px;*/
+		/*border:1px solid blue;*/	
+		position: relative;
+	}
+	.main img{
+		cursor: pointer;
+		width:100px;
+		height: 100px;
+		border:1px solid black;
+		display: block-inline;
+		
+		/*float:left;*/
+	}
+
+
+	</style>
+</head>
+<body>
+	<div class="main" id="sortable">
+		<img src="purple.png" alt="purple" >
+		<img src="brown.png" alt="brown" >
+		<img src="green.png" alt="green" >
+	</div>
+
+	<script>
+		var oDiv=document.getElementById("sortable");
+
+		oDiv.onmousedown=function(e){
+			var arr_clone=[];
+			var aBalls=oDiv.getElementsByTagName("img");
+
+			//给元素对象添加index
+			for(var i=0;i<aBalls.length;i++){
+				aBalls[i].index=i;
+			}
+
+			//阻止冒泡
+			var oEvent=e || window.event;
+	        if (oEvent.preventDefault) {
+		        oEvent.preventDefault();
+		    }else {
+		        oEvent.returnValue = false;
+		    }
+
+		    //获得目标元素
+			var target=oEvent.target || oEvent.srcElement;
+
+			//控制元素位置的相关变量
+			var left=target.offsetLeft;
+			var top=target.offsetTop;
+			var distX=oEvent.clientX-target.offsetLeft;
+			var distY=oEvent.clientY-target.offsetTop;
+
+			var animated=true; //鼠标移动时才会加入元素，变量控制是mouseup事件的执行
+			var cloneN=target.cloneNode(true);
+			cloneN.style.visibility="hidden"; //复制一个对象元素，之后加到目标元素之前
+			
+			//用于判断方向的相关变量
+			var direction=0; 
+			var lastX=null;
+			var curX;
+
+			//用于储存插入新元素之后的所有需要交换位置的元素的位置
+			var xiabiao=[];
+			xiabiao[0]=0;
+			for(var i=1;i<aBalls.length;i++){
+				if(target.index+1==i){
+					xiabiao[i]=i+1
+				}else{
+					xiabiao[i]=xiabiao[i-1]+1;
+				}
+			}
+			
+			//用于储存需要交换位置的元素对象		
+			for(var i=0;i<aBalls.length-1;i++){
+				arr_clone[i]=aBalls[xiabiao[i+1]-1].cloneNode(true);
+			}
+
+			if(target.nodeName.toLowerCase()=="img"){
+				var index=target.index%2; //index的初始值取决于目标元素的index，交替取0和1
+				document.onmousemove=function(ev){
+					if(animated){
+						oDiv.insertBefore(cloneN,oDiv.children[target.index]);	
+						target.style.position="absolute";
+						animated=false;
+					}
+					
+					var oEventM=ev || window.event;
+					target.style.left=oEventM.clientX-distX+"px";
+					target.style.top=oEventM.clientY-distY+"px";
+				
+					curX=oEventM.clientX;
+					if(lastX==null){	
+						lastX=oEventM.clientX;
+						return;
+					}
+					if(curX>lastX){
+						direction=1;
+					}else{
+						direction=0;
+					}
+					lastX=curX;
+
+					var num=aBalls.length-3;
+					var x=0;
+					if(target.offsetLeft<=50){
+						if(direction==0 && index==1){
+							var replace_cloneN=cloneN.cloneNode(true);
+							oDiv.replaceChild(replace_cloneN,oDiv.children[xiabiao[0]]);
+							oDiv.replaceChild(arr_clone[0],oDiv.children[xiabiao[1]]);
+							index--;
+						}
+					} //第一个位置的交换逻辑
+					for(var i=1;i<=num;i++){
+						if(i%2==0){
+							x=1;
+						}else{
+							x=0;
+						}//用i判断x的取值
+						if(target.offsetLeft>50+100*(i-1) && target.offsetLeft<=50+100*i){
+							if(direction==1 && index==x){
+								var replace_cloneN=cloneN.cloneNode(true);
+								oDiv.replaceChild(replace_cloneN,oDiv.children[xiabiao[i]]);
+								oDiv.replaceChild(arr_clone[i-1],oDiv.children[xiabiao[i-1]]);
+								if(x==0){
+									index++;
+								}else{
+									index--;
+								}//index++和index--交替出现
+							}else if(direction==0 && index==x){
+								console.log(arr_clone[1]);
+								var replace_cloneN=cloneN.cloneNode(true);
+								oDiv.replaceChild(replace_cloneN,oDiv.children[xiabiao[i]]);
+								oDiv.replaceChild(arr_clone[i],oDiv.children[xiabiao[i+1]]);
+								if(x==0){
+									index++;
+								}else{
+									index--;
+								}
+							}
+						}
+					}//中间位置的交换逻辑
+					if(target.offsetLeft>(50+100*num)){
+						if(num%2==0){
+							x=0;
+						}else{
+							x=1;
+						}
+						if(direction==1 && index==x){
+							if(x==0){
+								index++;
+							}else{
+								index--;
+							}
+							var replace_cloneN=cloneN.cloneNode(true);
+							oDiv.replaceChild(replace_cloneN,oDiv.children[xiabiao[num+1]]);
+							oDiv.replaceChild(arr_clone[num],oDiv.children[xiabiao[num]]);
+						}
+
+					}//末尾的交换逻辑
+
+
+					// if(target.offsetLeft<=50){
+					// 	if(direction==0 && index==1){
+					// 		var replace_cloneN=cloneN.cloneNode(true);
+					// 		oDiv.replaceChild(replace_cloneN,oDiv.children[xiabiao[0]]);
+					// 		oDiv.replaceChild(arr_clone[0],oDiv.children[xiabiao[1]]);
+					// 		index--;
+					// 	}
+					// }else if(target.offsetLeft>50 && target.offsetLeft<=150 ){
+					// 	if(direction==1 && index==0){
+					// 		var replace_cloneN=cloneN.cloneNode(true);
+					// 		oDiv.replaceChild(replace_cloneN,oDiv.children[xiabiao[1]]);
+					// 		oDiv.replaceChild(arr_clone[0],oDiv.children[xiabiao[0]]);
+					// 		index++;
+					// 	}else if(direction==0 && index==0){
+					// 		var replace_cloneN=cloneN.cloneNode(true);
+					// 		oDiv.replaceChild(replace_cloneN,oDiv.children[xiabiao[1]]);
+					// 		oDiv.replaceChild(arr_clone[1],oDiv.children[xiabiao[2]]);
+					// 		index++;
+					// 	}
+					// }else if(target.offsetLeft>150){
+					// 	if(direction==1 && index==1){
+					// 		index--;
+					// 		var replace_cloneN=cloneN.cloneNode(true);
+					// 		oDiv.replaceChild(replace_cloneN,oDiv.children[xiabiao[2]]);
+					// 		oDiv.replaceChild(arr_clone[1],oDiv.children[xiabiao[1]]);
+					// 	}
+					// }
+
+				}
+				document.onmouseup=function(){
+					document.onmousemove=null;
+					if(!animated){ //鼠标抬起后删除目标元素，将一开始的复制元素显示
+						var length=aBalls.length;
+						if(target.offsetLeft<=50){
+							oDiv.removeChild(oDiv.children[target.index+1]);
+							oDiv.children[0].style.visibility="visible";
+						}
+						for(var i=1;i<=length-3;i++){
+							if(target.offsetLeft>50+100*(i-1) && target.offsetLeft<=50+100*i ){
+								oDiv.removeChild(oDiv.children[target.index+1]);
+								oDiv.children[i].style.visibility="";
+							}
+						}
+						if(target.offsetLeft>50+100*(length-3)){
+								oDiv.removeChild(oDiv.children[target.index+1]);
+								oDiv.children[aBalls.length-1].style.visibility="";
+						}
+					}
+					document.onmouseup=null;
+				}
+			}
+			
+
+			// if(target.index==0){		
+
+			// 	if(target.nodeName.toLowerCase()=="img"){
+			// 		var index=0;
+			// 		document.onmousemove=function(ev){
+			// 			if(animated){
+			// 				oDiv.insertBefore(cloneN,oDiv.children[0]);	
+			// 				target.style.position="absolute";
+			// 				animated=false;
+			// 			}
+						
+			// 			var oEventM=ev || window.event;
+			// 			target.style.left=oEventM.clientX-distX+"px";
+			// 			target.style.top=oEventM.clientY-distY+"px";
+					
+			// 			curX=oEventM.clientX;
+			// 			if(lastX==null){	
+			// 				lastX=oEventM.clientX;
+			// 				return;
+			// 			}
+			// 			if(curX>lastX){
+			// 				direction=1;
+			// 			}else{
+			// 				direction=0;
+			// 			}
+			// 			lastX=curX;
+			// 			if(target.offsetLeft<=50){
+			// 				if(direction==0 && index==1){
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[0]);
+			// 					oDiv.replaceChild(clone_two,oDiv.children[2]);
+			// 					index--;
+			// 				}
+			// 			}else if(target.offsetLeft>50 && target.offsetLeft<=150 ){
+			// 				if(direction==1 && index==0){
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[2]);
+			// 					oDiv.replaceChild(clone_two,oDiv.children[0]);
+			// 					index++;
+			// 				}else if(direction==0 && index==0){
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[2]);
+			// 					oDiv.replaceChild(clone_three,oDiv.children[3]);
+			// 					index++;
+			// 				}
+			// 			}else if(target.offsetLeft>150 && target.offsetLeft<=250){
+			// 				if(direction==1 && index==1){
+			// 					index--;
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[3]);
+			// 					oDiv.replaceChild(clone_three,oDiv.children[2]);
+			// 				}
+			// 				if(direction==0 && index==1){
+			// 					index--;
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[3]);
+			// 					oDiv.replaceChild(clone_four,oDiv.children[4]);
+			// 				}
+			// 			}else if(target.offsetLeft>250){
+			// 				if(direction==1 && index==0){
+			// 					index++;
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[4]);
+			// 					oDiv.replaceChild(clone_four,oDiv.children[3]);
+			// 				}
+			// 			}
+
+			// 		}
+			// 		document.onmouseup=function(){
+			// 			document.onmousemove=null;
+			// 			if(!animated){
+			// 				if(target.offsetLeft<=50){
+			// 					oDiv.removeChild(oDiv.children[1]);
+			// 					oDiv.children[0].style.visibility="visible";
+			// 				}else if(target.offsetLeft>50 && target.offsetLeft<=150 ){
+			// 					oDiv.removeChild(oDiv.children[1]);
+			// 					oDiv.children[1].style.visibility="";
+			// 				}else if(target.offsetLeft>150){
+			// 					oDiv.removeChild(oDiv.children[1]);
+			// 					oDiv.children[2].style.visibility="";
+			// 				}
+			// 			}
+			// 			document.onmouseup=null;
+			// 		}
+			// 	}
+			// }	
+
+			// if(target.index==1){
+			// 	if(target.nodeName.toLowerCase()=="img"){
+			// 		var index=1;
+			// 		document.onmousemove=function(ev){
+			// 			if(animated){
+			// 				oDiv.insertBefore(cloneN,oDiv.children[1]);	
+			// 				target.style.position="absolute";
+			// 				animated=false;
+			// 			}
+			// 			var oEventM=ev || window.event;
+			// 			target.style.left=oEventM.clientX-distX+"px";
+			// 			target.style.top=oEventM.clientY-distY+"px";
+					
+			// 			curX=oEventM.clientX;
+			// 			if(lastX==null){	
+			// 				lastX=oEventM.clientX;
+			// 				return;
+			// 			}
+			// 			if(curX>lastX){
+			// 				direction=1;
+			// 			}else{
+			// 				direction=0;
+			// 			}
+			// 			lastX=curX;
+			// 			if(target.offsetLeft<=50){
+			// 				if(direction==0 && index==1){
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[0]);
+			// 					oDiv.replaceChild(clone_one,oDiv.children[1]);
+			// 					index--;
+			// 				}
+			// 			}else if(target.offsetLeft>50 && target.offsetLeft<=150 ){
+			// 				if(direction==1 && index==0){
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[1]);
+			// 					oDiv.replaceChild(clone_one,oDiv.children[0]);
+			// 					index++;
+			// 				}else if(direction==0 && index==0){
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[1]);
+			// 					oDiv.replaceChild(clone_three,oDiv.children[3]);
+			// 					index++;
+			// 				}
+			// 			}else if(target.offsetLeft>150){
+			// 				if(direction==1 && index==1){
+			// 					index--;
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[3]);
+			// 					oDiv.replaceChild(clone_three,oDiv.children[1]);
+			// 				}
+							
+			// 			}
+
+			// 		}
+			// 		document.onmouseup=function(){
+			// 			document.onmousemove=null;
+			// 			if(!animated){
+			// 				if(target.offsetLeft<=50){
+			// 					oDiv.removeChild(oDiv.children[2]);
+			// 					oDiv.children[0].style.visibility="visible";
+			// 				}else if(target.offsetLeft>50 && target.offsetLeft<=150 ){
+			// 					oDiv.removeChild(oDiv.children[2]);
+			// 					oDiv.children[1].style.visibility="";
+			// 				}else if(target.offsetLeft>150){
+			// 					oDiv.removeChild(oDiv.children[2]);
+			// 					oDiv.children[2].style.visibility="";
+			// 				}
+			// 			}
+			// 			document.onmouseup=null;
+			// 		}
+			// 	}
+			// }
+
+			// if(target.index==2){
+			// 	if(target.nodeName.toLowerCase()=="img"){
+			// 		var index=0;
+			// 		document.onmousemove=function(ev){
+			// 			if(animated){
+			// 				oDiv.insertBefore(cloneN,oDiv.children[2]);	
+			// 				target.style.position="absolute";
+			// 				animated=false;
+			// 			}
+			// 			var oEventM=ev || window.event;
+			// 			target.style.left=oEventM.clientX-distX+"px";
+			// 			target.style.top=oEventM.clientY-distY+"px";
+					
+			// 			curX=oEventM.clientX;
+			// 			if(lastX==null){	
+			// 				lastX=oEventM.clientX;
+			// 				return;
+			// 			}
+			// 			if(curX>lastX){
+			// 				direction=1;
+			// 			}else{
+			// 				direction=0;
+			// 			}
+			// 			lastX=curX;
+			// 			if(target.offsetLeft<=50){
+			// 				if(direction==0 && index==1){
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[0]);
+			// 					oDiv.replaceChild(clone_one,oDiv.children[1]);
+			// 					index--;
+			// 				}
+			// 			}else if(target.offsetLeft>50 && target.offsetLeft<=150 ){
+			// 				if(direction==1 && index==0){
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[1]);
+			// 					oDiv.replaceChild(clone_one,oDiv.children[0]);
+			// 					index++;
+			// 				}else if(direction==0 && index==0){
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[1]);
+			// 					oDiv.replaceChild(clone_two,oDiv.children[2]);
+			// 					index++;
+			// 				}
+			// 			}else if(target.offsetLeft>150){
+			// 				if(direction==1 && index==1){
+			// 					index--;
+			// 					var replace_cloneN=cloneN.cloneNode(true);
+			// 					oDiv.replaceChild(replace_cloneN,oDiv.children[2]);
+			// 					oDiv.replaceChild(clone_two,oDiv.children[1]);
+			// 				}
+							
+			// 			}
+
+			// 		}
+			// 		document.onmouseup=function(){
+			// 			document.onmousemove=null;
+			// 			if(!animated){
+			// 				if(target.offsetLeft<=50){
+			// 					oDiv.removeChild(oDiv.children[3]);
+			// 					oDiv.children[0].style.visibility="visible";
+			// 				}else if(target.offsetLeft>50 && target.offsetLeft<=150 ){
+			// 					oDiv.removeChild(oDiv.children[3]);
+			// 					oDiv.children[1].style.visibility="";
+			// 				}else if(target.offsetLeft>150){
+			// 					oDiv.removeChild(oDiv.children[3]);
+			// 					oDiv.children[2].style.visibility="";
+			// 				}
+			// 			}
+			// 			document.onmouseup=null;
+			// 		}
+			// 	}
+			// }
+		}
+
+	</script>
+</body>
+</html>
